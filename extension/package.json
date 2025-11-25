@@ -1,0 +1,146 @@
+{
+    "name": "codereviewpro",
+    "displayName": "CodeReviewPro 1.0",
+    "description": "Advanced peer review and code quality assessment agent for VS Code",
+    "version": "1.0.0",
+    "publisher": "codereviewpro",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Linters",
+        "Programming Languages",
+        "Testing"
+    ],
+    "keywords": [
+        "code review",
+        "quality",
+        "security",
+        "analysis",
+        "linter"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "codereviewpro.scanWorkspace",
+                "title": "CodeReviewPro: Scan Current Workspace",
+                "icon": "$(search)"
+            },
+            {
+                "command": "codereviewpro.viewReport",
+                "title": "CodeReviewPro: View Last Report",
+                "icon": "$(file-text)"
+            },
+            {
+                "command": "codereviewpro.compareScans",
+                "title": "CodeReviewPro: Compare Scans",
+                "icon": "$(diff)"
+            },
+            {
+                "command": "codereviewpro.exportReport",
+                "title": "CodeReviewPro: Export Report",
+                "icon": "$(export)"
+            },
+            {
+                "command": "codereviewpro.configureSettings",
+                "title": "CodeReviewPro: Configure Settings",
+                "icon": "$(settings-gear)"
+            }
+        ],
+        "configuration": {
+            "title": "CodeReviewPro",
+            "properties": {
+                "codereviewpro.serverUrl": {
+                    "type": "string",
+                    "default": "http://localhost:5000",
+                    "description": "URL of the CodeReviewPro backend server"
+                },
+                "codereviewpro.autoScanOnSave": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Automatically scan files on save"
+                },
+                "codereviewpro.severityLevels": {
+                    "type": "object",
+                    "default": {
+                        "security": "error",
+                        "bug": "error",
+                        "performance": "warning",
+                        "maintainability": "info",
+                        "architecture": "info"
+                    },
+                    "description": "Severity mapping for different issue categories"
+                },
+                "codereviewpro.excludePatterns": {
+                    "type": "array",
+                    "default": [
+                        "**/node_modules/**",
+                        "**/dist/**",
+                        "**/build/**",
+                        "**/.git/**",
+                        "**/venv/**",
+                        "**/__pycache__/**"
+                    ],
+                    "description": "File patterns to exclude from scanning"
+                },
+                "codereviewpro.maxFileSize": {
+                    "type": "number",
+                    "default": 1048576,
+                    "description": "Maximum file size to analyze (in bytes, default 1MB)"
+                },
+                "codereviewpro.confirmLargeScan": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Ask for confirmation before scanning large repositories (>5000 files)"
+                }
+            }
+        },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "codereviewpro",
+                    "title": "CodeReviewPro",
+                    "icon": "resources/icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "codereviewpro": [
+                {
+                    "id": "codereviewpro.issuesView",
+                    "name": "Issues"
+                },
+                {
+                    "id": "codereviewpro.historyView",
+                    "name": "Scan History"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js",
+        "package": "vsce package"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.85.0",
+        "@types/node": "^20.x",
+        "@typescript-eslint/eslint-plugin": "^6.15.0",
+        "@typescript-eslint/parser": "^6.15.0",
+        "eslint": "^8.56.0",
+        "typescript": "^5.3.3",
+        "@vscode/test-electron": "^2.3.8",
+        "@vscode/vsce": "^2.22.0"
+    },
+    "dependencies": {
+        "axios": "^1.6.2"
+    }
+}
