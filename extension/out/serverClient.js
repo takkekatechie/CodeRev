@@ -174,7 +174,12 @@ class ServerClient {
             const response = await this.client.get(`/api/scan/${scanId}/export`, {
                 params: { format },
             });
-            return response.data.content;
+            if (response.data.is_binary) {
+                return Buffer.from(response.data.content, 'base64');
+            }
+            else {
+                return Buffer.from(response.data.content, 'utf-8');
+            }
         }
         catch (error) {
             if (axios_1.default.isAxiosError(error)) {
