@@ -1,8 +1,8 @@
 {
     "name": "codereviewpro",
-    "displayName": "CodeReviewPro 1.0",
-    "description": "Advanced peer review and code quality assessment agent for VS Code",
-    "version": "1.0.0",
+    "displayName": "CodeReviewPro 1.1",
+    "description": "Advanced peer review and code quality assessment agent for VS Code with AI-powered analysis",
+    "version": "1.1.0",
     "publisher": "codereviewpro",
     "engines": {
         "vscode": "^1.85.0"

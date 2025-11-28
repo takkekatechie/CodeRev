@@ -1,0 +1,57 @@
+# LLM Configuration Example
+# Copy this file to llm_config.yaml and configure your preferred LLM provider
+
+llm:
+  # Enable or disable LLM-powered code review
+  enabled: false  # Set to true to enable LLM analysis
+  
+  # Select your LLM provider
+  # Options: openai, gemini, anthropic, perplexity, openrouter
+  provider: openai
+  
+  # Provider-specific configurations
+  # Only the selected provider's configuration will be used
+  
+  openai:
+    # Get your API key from: https://platform.openai.com/api-keys
+    api_key: ""  # Or use ${OPENAI_API_KEY} to reference environment variable
+    model: gpt-4  # Options: gpt-4, gpt-4-turbo, gpt-3.5-turbo
+    max_tokens: 2000
+    temperature: 0.3
+  
+  gemini:
+    # Get your API key from: https://makersuite.google.com/app/apikey
+    api_key: ""  # Or use ${GOOGLE_API_KEY}
+    model: gemini-pro  # Options: gemini-pro, gemini-1.5-pro, gemini-1.5-flash
+    max_tokens: 2000
+    temperature: 0.3
+  
+  anthropic:
+    # Get your API key from: https://console.anthropic.com/
+    api_key: ""  # Or use ${ANTHROPIC_API_KEY}
+    model: claude-3-opus-20240229  # Options: claude-3-opus-20240229, claude-3-sonnet-20240229, claude-3-haiku-20240307
+    max_tokens: 2000
+    temperature: 0.3
+  
+  perplexity:
+    # Get your API key from: https://www.perplexity.ai/settings/api
+    api_key: ""  # Or use ${PERPLEXITY_API_KEY}
+    model: pplx-70b-online  # Options: pplx-70b-online, pplx-7b-online
+    max_tokens: 2000
+    temperature: 0.3
+  
+  openrouter:
+    # Get your API key from: https://openrouter.ai/keys
+    api_key: ""  # Or use ${OPENROUTER_API_KEY}
+    model: openai/gpt-4  # Any OpenRouter model (e.g., openai/gpt-4, anthropic/claude-3-opus)
+    max_tokens: 2000
+    temperature: 0.3
+  
+  # Common settings (apply to all providers)
+  fallback_on_error: true  # Fallback to pattern-based analysis on LLM errors
+  check_credits: true  # Check for available credits before making API calls
+  
+  # Rate limiting to avoid hitting API limits
+  rate_limit:
+    requests_per_minute: 10
+    requests_per_hour: 100

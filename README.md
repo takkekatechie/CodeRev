@@ -3,13 +3,14 @@
 > **AI-Powered Code Review Tool** for VS Code  
 > Fast, intelligent code analysis for Python, JavaScript/TypeScript, React, React Native, SQL, and JSON
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/codereviewpro)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/yourusername/codereviewpro)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
 
 ## 🚀 Features
 
+- 🤖 **AI-Powered Analysis** - Optional LLM integration (GPT-4, Gemini, Claude, Perplexity, OpenRouter) for intelligent code review
 - ⚡ **Lightning Fast** - Scans 100+ files in under 5 seconds
 - 🔍 **Multi-Language Support** - Python, JavaScript, TypeScript, React, React Native, SQL, JSON
 - 🛡️ **Security Analysis** - Detects hardcoded secrets, XSS vulnerabilities, SQL injection risks
@@ -18,6 +19,7 @@
 - 🎨 **VS Code Integration** - Seamless integration with Problems panel and WebView reports
 - 🔧 **Customizable** - Filter by category and severity
 - 📊 **Rich Reports** - Interactive HTML reports with filtering
+- 🔄 **Smart Fallback** - Automatically falls back to pattern-based analysis when LLM unavailable
 
 ---
 
@@ -194,7 +196,62 @@ Create `.vscode/settings.json` in your project:
 - Use VS Code's built-in filter (funnel icon)
 - Filter by severity, file, or text
 
+### 🤖 AI-Powered Analysis (Optional)
+
+CodeReviewPro v1.1 supports optional LLM integration for more intelligent, context-aware code reviews.
+
+#### Supported Providers
+
+- **OpenAI** (GPT-4, GPT-3.5-turbo)
+- **Google Gemini** (Gemini Pro, Gemini 1.5 Pro)
+- **Anthropic** (Claude-3 Opus, Sonnet, Haiku)
+- **Perplexity** (pplx-70b-online)
+- **OpenRouter** (Access to multiple models)
+
+#### Setup
+
+1. **Copy the example config:**
+   ```bash
+   cd backend
+   cp llm_config.example.yaml llm_config.yaml
+   ```
+
+2. **Edit `llm_config.yaml` and configure your provider:**
+   ```yaml
+   llm:
+     enabled: true
+     provider: openai  # or gemini, anthropic, perplexity, openrouter
+     
+     openai:
+       api_key: "your-api-key-here"  # Or use ${OPENAI_API_KEY}
+       model: gpt-4
+       max_tokens: 2000
+       temperature: 0.3
+   ```
+
+3. **Restart the backend server:**
+   ```bash
+   python server.py
+   ```
+
+#### How It Works
+
+- **LLM-First Strategy**: When enabled, CodeReviewPro tries LLM analysis first
+- **Smart Fallback**: If LLM is unavailable or credits exhausted, automatically falls back to pattern-based analysis
+- **Same Reporting**: Results are displayed the same way regardless of analysis method
+- **Rate Limiting**: Built-in rate limiting to avoid hitting API limits
+
+#### Cost Considerations
+
+> [!WARNING]
+> LLM-based analysis incurs API costs from your chosen provider. The system will automatically fallback to free pattern-based analysis when:
+> - LLM is disabled in config
+> - API key is invalid or missing
+> - Rate limits are exceeded
+> - API credits are exhausted
+
 ---
+
 
 ## ⚙️ Configuration
 

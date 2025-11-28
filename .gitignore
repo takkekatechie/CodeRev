@@ -1,0 +1,13 @@
+backend/llm_config.yaml
+*.env
+.env.local
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/

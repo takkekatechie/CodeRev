@@ -1,38 +1,47 @@
 """
-Analyzer registry
+Analyzer registry and management
 """
 
 from typing import List, Type
-from pathlib import Path
-from analyzers.base_analyzer import BaseAnalyzer
+from .base_analyzer import BaseAnalyzer
+from .python_analyzer import PythonAnalyzer
+from .javascript_analyzer import JavaScriptAnalyzer
+from .sql_analyzer import SQLAnalyzer
+from .json_analyzer import JSONAnalyzer
+from .llm_analyzer import LLMAnalyzer
+
 
 class AnalyzerRegistry:
     """Registry for all code analyzers"""
     
-    _analyzers: List[Type[BaseAnalyzer]] = []
-    
-    @classmethod
-    def register(cls, name: str, analyzer_class: Type[BaseAnalyzer]) -> None:
-        """Register an analyzer"""
-        if analyzer_class not in cls._analyzers:
-            cls._analyzers.append(analyzer_class)
+    # Analyzers in priority order (LLM first, then pattern-based)
+    _analyzers = [
+        LLMAnalyzer,  # Try LLM first if available
+        PythonAnalyzer,
+        JavaScriptAnalyzer,
+        SQLAnalyzer,
+        JSONAnalyzer,
+    ]
     
     @classmethod
     def get_all_analyzers(cls) -> List[Type[BaseAnalyzer]]:
         """Get all registered analyzers"""
-        return cls._analyzers.copy()
+        return cls._analyzers
     
     @classmethod
     def get_analyzers_for_file(cls, file_path: str) -> List[Type[BaseAnalyzer]]:
-        """Get analyzers that support the given file"""
-        file_ext = Path(file_path).suffix.lower()
-        
-        matching_analyzers = []
+        """Get analyzers that can handle the given file"""
+        analyzers = []
         for analyzer_class in cls._analyzers:
             analyzer = analyzer_class()
-            if file_ext in analyzer.get_supported_extensions():
-                matching_analyzers.append(analyzer_class)
-        
-        return matching_analyzers
+            if analyzer.can_analyze(file_path):
+                # Special handling for LLM analyzer
+                if isinstance(analyzer, LLMAnalyzer):
+                    if analyzer.is_available():
+                        analyzers.append(analyzer_class)
+                else:
+                    analyzers.append(analyzer_class)
+        return analyzers
+
 
 __all__ = ['BaseAnalyzer', 'AnalyzerRegistry']

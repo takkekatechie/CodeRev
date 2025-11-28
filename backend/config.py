@@ -131,3 +131,62 @@ class Config:
             'severity_levels': cls.SEVERITY_LEVELS,
             'rules': cls.ANALYSIS_RULES,
         }
+    
+    # LLM Configuration
+    LLM_ENABLED = False
+    LLM_PROVIDER = None
+    LLM_CONFIG = {}
+    
+    @classmethod
+    def load_llm_config(cls, config_path: str = None) -> Dict[str, Any]:
+        """Load LLM configuration from YAML file"""
+        if config_path is None:
+            config_path = os.path.join(os.path.dirname(__file__), 'llm_config.yaml')
+        
+        if not os.path.exists(config_path):
+            logger = __import__('utils').get_logger(__name__)
+            logger.info(f"LLM config not found at {config_path}, LLM features disabled")
+            return {}
+        
+        try:
+            with open(config_path, 'r') as f:
+                llm_config = yaml.safe_load(f)
+            
+            if not llm_config or 'llm' not in llm_config:
+                return {}
+            
+            llm = llm_config['llm']
+            
+            # Expand environment variables in API keys
+            provider = llm.get('provider', 'openai')
+            if provider in llm:
+                provider_config = llm[provider].copy()
+                api_key = provider_config.get('api_key', '')
+                
+                # Handle environment variable references like ${OPENAI_API_KEY}
+                if api_key.startswith('${') and api_key.endswith('}'):
+                    env_var = api_key[2:-1]
+                    provider_config['api_key'] = os.getenv(env_var, '')
+                
+                llm[provider] = provider_config
+            
+            # Update class variables
+            cls.LLM_ENABLED = llm.get('enabled', False)
+            cls.LLM_PROVIDER = provider
+            cls.LLM_CONFIG = llm
+            
+            return llm
+            
+        except Exception as e:
+            logger = __import__('utils').get_logger(__name__)
+            logger.error(f"Error loading LLM config: {e}")
+            return {}
+    
+    @classmethod
+    def get_llm_provider_config(cls) -> Dict[str, Any]:
+        """Get configuration for the selected LLM provider"""
+        if not cls.LLM_ENABLED or not cls.LLM_PROVIDER:
+            return {}
+        
+        return cls.LLM_CONFIG.get(cls.LLM_PROVIDER, {})
+

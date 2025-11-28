@@ -26,6 +26,16 @@ class ScanOrchestrator:
     def __init__(self):
         self.scans = {}  # In-memory storage
         self.current_progress = {}
+        
+        # Load LLM configuration
+        try:
+            Config.load_llm_config()
+            if Config.LLM_ENABLED:
+                logger.info(f"LLM enabled with provider: {Config.LLM_PROVIDER}")
+            else:
+                logger.info("LLM disabled, using pattern-based analysis only")
+        except Exception as e:
+            logger.error(f"Failed to load LLM config: {e}")
     
     def start_scan(self, repo_path: str, exclude_patterns: List[str] = None) -> str:
         """Start a scan - returns immediately"""
@@ -142,7 +152,7 @@ class ScanOrchestrator:
         return files
     
     def _analyze_file(self, file_path: str) -> List[Dict[str, Any]]:
-        """Analyze a single file"""
+        """Analyze a single file with LLM-first strategy"""
         content = read_file_safe(file_path, Config.MAX_FILE_SIZE)
         if not content:
             return []
@@ -152,24 +162,55 @@ class ScanOrchestrator:
             return []
         
         issues = []
+        llm_used = False
+        
+        # Try LLM analyzer first if available
         for analyzer_class in analyzer_classes:
             try:
                 analyzer = analyzer_class()
-                file_issues = analyzer.analyze_file(file_path, content)
                 
-                # Convert to dict with camelCase keys for extension compatibility
-                for issue in file_issues:
-                    issues.append({
-                        'category': issue.category,
-                        'severity': issue.severity,
-                        'filePath': issue.file_path,  # camelCase
-                        'lineStart': issue.line_start,  # camelCase
-                        'lineEnd': issue.line_end,  # camelCase
-                        'description': issue.description,
-                        'recommendation': issue.recommendation,
-                    })
-            except Exception:
-                pass
+                # Check if this is LLM analyzer
+                from analyzers.llm_analyzer import LLMAnalyzer
+                if isinstance(analyzer, LLMAnalyzer):
+                    if analyzer.is_available():
+                        file_issues = analyzer.analyze_file(file_path, content)
+                        if file_issues:
+                            llm_used = True
+                            logger.info(f"LLM analysis successful for {file_path}")
+                            # Convert to dict format
+                            for issue in file_issues:
+                                issues.append({
+                                    'category': issue.category,
+                                    'severity': issue.severity,
+                                    'filePath': issue.file_path,
+                                    'lineStart': issue.line_start,
+                                    'lineEnd': issue.line_end,
+                                    'description': issue.description,
+                                    'recommendation': issue.recommendation,
+                                })
+                            break  # LLM succeeded, skip pattern-based analyzers
+                        else:
+                            logger.debug(f"LLM returned no issues for {file_path}")
+                    else:
+                        logger.debug(f"LLM not available for {file_path}")
+                else:
+                    # Pattern-based analyzer - only use if LLM didn't succeed
+                    if not llm_used:
+                        file_issues = analyzer.analyze_file(file_path, content)
+                        for issue in file_issues:
+                            issues.append({
+                                'category': issue.category,
+                                'severity': issue.severity,
+                                'filePath': issue.file_path,
+                                'lineStart': issue.line_start,
+                                'lineEnd': issue.line_end,
+                                'description': issue.description,
+                                'recommendation': issue.recommendation,
+                            })
+                        
+            except Exception as e:
+                logger.error(f"Analyzer {analyzer_class.__name__} failed: {e}")
+                continue
         
         return issues
     
