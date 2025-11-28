@@ -28,14 +28,13 @@ CodeReviewPro is a comprehensive code analysis tool that combines pattern-based 
 - [AI-Powered Analysis](#ai-powered-analysis-optional)
 - [Export Functionality](#export-functionality)
 - [Configuration](#configuration)
-- [Architecture](#architecture)
 - [Development](#development)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 
 ---
 
-## 🔧 Installation
+## 🔧Installation
 
 ### Prerequisites
 
@@ -82,7 +81,7 @@ npm run compile
 
 ---
 
-## 🚀 Quick Start
+## 🚀Quick Start
 
 ### 1. Start the Backend Server
 
@@ -124,7 +123,7 @@ Open any project containing supported language files.
 
 ---
 
-## 🌐 Supported Languages
+## 🌐Supported Languages
 
 ### Python (`.py`, `.pyw`)
 - **Security**: Hardcoded secrets, eval/exec usage, bare except clauses
@@ -167,7 +166,7 @@ Open any project containing supported language files.
 
 ---
 
-## 📖 Usage
+## 📖Usage
 
 ### Basic Scan
 
@@ -210,7 +209,7 @@ Create `.vscode/settings.json` in your project:
 
 ---
 
-## 📥 Export Functionality
+## 📥Export Functionality
 
 ### Export from WebView
 - Click the **Export Report** button in the top-right corner of the report
@@ -235,7 +234,7 @@ Create `.vscode/settings.json` in your project:
 
 ---
 
-## 🤖 AI-Powered Analysis (Optional)
+## 🤖AI-Powered Analysis (Optional)
 
 CodeReviewPro v1.2 supports optional LLM integration for more intelligent, context-aware code reviews.
 
@@ -291,7 +290,7 @@ CodeReviewPro v1.2 supports optional LLM integration for more intelligent, conte
 
 ---
 
-## ⚙️ Configuration
+## ⚙️Configuration
 
 ### Server Configuration
 
@@ -332,7 +331,7 @@ Available settings in VS Code:
 
 ---
 
-## 🏗️ Architecture
+## 🏗️Architecture
 
 ```
 CodeReviewPro/
@@ -383,7 +382,7 @@ CodeReviewPro/
 
 ---
 
-## 👨‍💻 Development
+## 👨‍💻Development
 
 ### Backend Development
 
@@ -449,7 +448,7 @@ class AnalyzerRegistry:
 
 ---
 
-## 🐛 Troubleshooting
+## 🐛Troubleshooting
 
 ### Backend Server Won't Start
 
@@ -509,7 +508,7 @@ kill -9 <PID>
 
 ---
 
-## 📊 Example Output
+## 📊Example Output
 
 ### Console Output
 ```
@@ -539,13 +538,13 @@ Category: Security ▼
 
 ---
 
-## 📄 License
+## 📄License
 
 MIT License - see [LICENSE](LICENSE) file for details
 
 ---
 
-## 🤝 Contributing
+## 🤝Contributing
 
 Contributions welcome! Please:
 
