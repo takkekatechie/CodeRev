@@ -33,6 +33,15 @@ export class ReportView {
       this.panel.onDidDispose(() => {
         this.panel = undefined;
       });
+
+      // Handle messages from webview
+      this.panel.webview.onDidReceiveMessage(
+        message => {
+          if (message.command === 'export') {
+            vscode.commands.executeCommand('codereviewpro.exportReport');
+          }
+        }
+      );
     }
 
     this.panel.webview.html = this.getHtmlContent(result);
@@ -54,10 +63,17 @@ export class ReportView {
 <body>
   <div class="container">
     <header>
-      <h1>🔍 CodeReviewPro Report</h1>
-      <div class="metadata">
-        <p><strong>Scan Date:</strong> ${currentScan.scanDate ? new Date(currentScan.scanDate).toLocaleString() : new Date().toLocaleString()}</p>
-        <p><strong>Repository:</strong> ${currentScan.repositoryPath || 'Unknown'}</p>
+      <div class="header-content">
+        <div>
+          <h1>🔍 CodeReviewPro Report</h1>
+          <div class="metadata">
+            <p><strong>Scan Date:</strong> ${currentScan.scanDate ? new Date(currentScan.scanDate).toLocaleString() : new Date().toLocaleString()}</p>
+            <p><strong>Repository:</strong> ${currentScan.repositoryPath || 'Unknown'}</p>
+          </div>
+        </div>
+        <button class="export-btn" onclick="exportReport()">
+          <span class="export-icon">📥</span> Export Report
+        </button>
       </div>
     </header>
 
@@ -214,6 +230,23 @@ export class ReportView {
       }
       .container { max-width: 1200px; margin: 0 auto; }
       header { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--vscode-panel-border); }
+      .header-content { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+      .export-btn {
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+        white-space: nowrap;
+      }
+      .export-btn:hover { background: var(--vscode-button-hoverBackground); }
+      .export-icon { font-size: 1.1em; }
       h1 { font-size: 2em; margin-bottom: 10px; }
       h2 { font-size: 1.5em; margin: 20px 0 15px; }
       h3 { font-size: 1.2em; margin: 15px 0 10px; }
@@ -279,6 +312,14 @@ export class ReportView {
 
   private getScripts(): string {
     return `
+      // Get VS Code API
+      const vscode = acquireVsCodeApi();
+      
+      // Export function
+      function exportReport() {
+        vscode.postMessage({ command: 'export' });
+      }
+      
       // Tab switching logic
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {

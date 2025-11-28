@@ -1,7 +1,21 @@
+# CodeReviewPro
+
+> **Advanced AI-Powered Code Review & Quality Analysis for VS Code**
+
+CodeReviewPro is a comprehensive code analysis tool that combines pattern-based detection with optional AI-powered insights to help you write better, more secure code.
+
+## ✨ Key Features
+
+- 🤖 **AI-Powered Analysis** - Optional LLM integration (OpenAI, Gemini, Claude, Perplexity, OpenRouter)
+- 🌐 **Multi-Language Support** - Python, JavaScript/TypeScript, Java, Go, Rust, SQL, JSON
+- 🛡️ **Security Scanning** - Detects OWASP Top 10 vulnerabilities and security issues
+- 🐛 **Bug Detection** - Identifies common coding errors and anti-patterns
+- ⚡ **Performance Analysis** - Flags inefficient code patterns
 - 🎨 **VS Code Integration** - Seamless integration with Problems panel and WebView reports
-- 🔧 **Customizable** - Filter by category and severity
 - 📊 **Rich Reports** - Interactive HTML reports with tabbed severity views and filtering
+- 📥 **Export Functionality** - Export reports to Excel, CSV, Word, PDF, Text, Markdown, HTML
 - 🔄 **Smart Fallback** - Automatically falls back to pattern-based analysis when LLM unavailable
+- 🔧 **Customizable** - Filter by category and severity
 
 ---
 
@@ -11,6 +25,8 @@
 - [Quick Start](#quick-start)
 - [Supported Languages](#supported-languages)
 - [Usage](#usage)
+- [AI-Powered Analysis](#ai-powered-analysis-optional)
+- [Export Functionality](#export-functionality)
 - [Configuration](#configuration)
 - [Architecture](#architecture)
 - [Development](#development)
@@ -82,7 +98,7 @@ INFO - Starting CodeReviewPro server on http://localhost:5000
 
 ### 2. Open Your Project in VS Code
 
-Open any project containing Python, JavaScript, TypeScript, React, or SQL files.
+Open any project containing supported language files.
 
 ### 3. Run a Scan
 
@@ -104,6 +120,7 @@ Open any project containing Python, JavaScript, TypeScript, React, or SQL files.
 - A detailed HTML report opens automatically
 - **New in v1.2**: Tabbed view for Error, Warning, and Info severities
 - Filter by category (Security, Bugs, Performance, Maintainability)
+- Click the **Export Report** button to save in various formats
 
 ---
 
@@ -111,9 +128,9 @@ Open any project containing Python, JavaScript, TypeScript, React, or SQL files.
 
 ### Python (`.py`, `.pyw`)
 - **Security**: Hardcoded secrets, eval/exec usage, bare except clauses
-- **Bugs**: Type errors, undefined variables
-- **Performance**: Inefficient loops, repeated operations
-- **Maintainability**: Code complexity, documentation
+- **Bugs**: Type errors, undefined variables, mutable default arguments
+- **Performance**: Inefficient loops, string concatenation in loops
+- **Maintainability**: Function length, parameter count, code complexity
 
 ### JavaScript/TypeScript (`.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`)
 - **Security**: API keys, XSS vulnerabilities, dangerous functions
@@ -121,10 +138,23 @@ Open any project containing Python, JavaScript, TypeScript, React, or SQL files.
 - **Performance**: Multiple array iterations, inline functions
 - **React**: Missing keys, useEffect dependencies, accessibility
 
-### React Native
-- **Accessibility**: Missing accessibility props on touchables
-- **Performance**: FlatList without keyExtractor
-- **Best Practices**: Component optimization
+### Java (`.java`)
+- **Security**: Hardcoded credentials, SQL injection, unsafe deserialization
+- **Bugs**: Empty catch blocks, string comparison with ==, potential NullPointerException
+- **Performance**: String concatenation in loops, legacy collection usage
+- **Maintainability**: Missing Javadoc, TODO comments
+
+### Go (`.go`)
+- **Security**: Hardcoded credentials, SQL injection, unsafe package usage
+- **Bugs**: Unchecked errors, empty error checks
+- **Performance**: String concatenation in loops
+- **Maintainability**: Missing documentation for exported functions, TODO comments
+
+### Rust (`.rs`)
+- **Security**: Hardcoded credentials, unsafe blocks
+- **Bugs**: unwrap() usage, direct indexing, empty expect() messages
+- **Performance**: Cloning in loops, inefficient string operations
+- **Maintainability**: Missing documentation for public functions, TODO comments
 
 ### SQL (`.sql`)
 - **Performance**: SELECT *, missing indexes, missing WHERE clauses
@@ -178,19 +208,46 @@ Create `.vscode/settings.json` in your project:
 - Use VS Code's built-in filter (funnel icon)
 - Filter by severity, file, or text
 
-### 🤖 AI-Powered Analysis (Optional)
+---
+
+## 📥 Export Functionality
+
+### Export from WebView
+- Click the **Export Report** button in the top-right corner of the report
+- Select your desired format
+
+### Export from Command Palette
+- Press `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (Mac)
+- Run `CodeReviewPro: Export Report`
+- Select format and save location
+
+### Supported Export Formats
+
+| Format | Extension | Description |
+|--------|-----------|-------------|
+| **Excel** | `.xlsx` | Tabular data with formatted columns |
+| **CSV** | `.csv` | Comma-separated values for data analysis |
+| **Word** | `.docx` | Formatted document with color-coded severity |
+| **PDF** | `.pdf` | Professional report layout |
+| **Text** | `.txt` | Plain text summary |
+| **Markdown** | `.md` | Markdown formatted report |
+| **HTML** | `.html` | Web-based report |
+
+---
+
+## 🤖 AI-Powered Analysis (Optional)
 
 CodeReviewPro v1.2 supports optional LLM integration for more intelligent, context-aware code reviews.
 
-#### Supported Providers
+### Supported Providers
 
-- **OpenAI**
-- **Google Gemini**
-- **Anthropic**
-- **Perplexity**
-- **OpenRouter**
+- **OpenAI** (GPT-4, GPT-3.5-turbo)
+- **Google Gemini** (Gemini Pro, Gemini 1.5 Pro)
+- **Anthropic** (Claude-3 Opus, Sonnet, Haiku)
+- **Perplexity** (pplx-70b-online)
+- **OpenRouter** (Access to multiple models)
 
-#### Setup
+### Setup
 
 1. **Copy the example config:**
    ```bash
@@ -216,14 +273,14 @@ CodeReviewPro v1.2 supports optional LLM integration for more intelligent, conte
    python server.py
    ```
 
-#### How It Works
+### How It Works
 
 - **LLM-First Strategy**: When enabled, CodeReviewPro tries LLM analysis first
 - **Smart Fallback**: If LLM is unavailable or credits exhausted, automatically falls back to pattern-based analysis
 - **Same Reporting**: Results are displayed the same way regardless of analysis method
 - **Rate Limiting**: Built-in rate limiting to avoid hitting API limits
 
-#### Cost Considerations
+### Cost Considerations
 
 > [!WARNING]
 > LLM-based analysis incurs API costs from your chosen provider. The system will automatically fallback to free pattern-based analysis when:
@@ -233,7 +290,6 @@ CodeReviewPro v1.2 supports optional LLM integration for more intelligent, conte
 > - API credits are exhausted
 
 ---
-
 
 ## ⚙️ Configuration
 
@@ -256,6 +312,9 @@ class Config:
         'python': ['.py', '.pyw'],
         'javascript': ['.js', '.jsx', '.mjs'],
         'typescript': ['.ts', '.tsx'],
+        'java': ['.java'],
+        'go': ['.go'],
+        'rust': ['.rs'],
         'sql': ['.sql'],
         'json': ['.json']
     }
@@ -282,8 +341,14 @@ CodeReviewPro/
 │   │   ├── base_analyzer.py   # Base analyzer interface
 │   │   ├── python_analyzer.py # Python analysis
 │   │   ├── javascript_analyzer.py # JS/TS/React analysis
+│   │   ├── java_analyzer.py   # Java analysis
+│   │   ├── go_analyzer.py     # Go analysis
+│   │   ├── rust_analyzer.py   # Rust analysis
 │   │   ├── sql_analyzer.py    # SQL analysis
-│   │   └── json_analyzer.py   # JSON analysis
+│   │   ├── json_analyzer.py   # JSON analysis
+│   │   └── llm_analyzer.py    # AI-powered analysis
+│   ├── llm_providers/         # LLM provider integrations
+│   ├── exporters.py           # Report export functionality
 │   ├── scanner.py             # Fast scanner (in-memory)
 │   ├── server.py              # Flask REST API
 │   ├── config.py              # Configuration
@@ -295,7 +360,7 @@ CodeReviewPro/
     │   ├── extension.ts       # Main extension logic
     │   ├── serverClient.ts    # Backend communication
     │   ├── diagnosticProvider.ts # Problems panel integration
-    │   ├── reportView.ts      # WebView report
+    │   ├── reportView.ts      # WebView report with export button
     │   └── types.ts           # TypeScript types
     ├── package.json           # Extension manifest
     └── tsconfig.json          # TypeScript config
@@ -305,7 +370,7 @@ CodeReviewPro/
 
 1. **Extension** sends scan request to backend via REST API
 2. **Backend** uses `os.walk()` for fast file collection
-3. **Analyzers** process files in parallel (pattern-based analysis)
+3. **Analyzers** process files in parallel (LLM-first, then pattern-based)
 4. **Results** returned as JSON with camelCase field names
 5. **Extension** displays issues in Problems panel and WebView
 
@@ -372,13 +437,14 @@ class YourAnalyzer(BaseAnalyzer):
 2. Register in `backend/analyzers/__init__.py`:
 
 ```python
-from analyzers import your_analyzer
-```
+from .your_analyzer import YourAnalyzer
 
-3. Import in `backend/scanner.py`:
-
-```python
-from analyzers import python_analyzer, sql_analyzer, json_analyzer, javascript_analyzer, your_analyzer
+class AnalyzerRegistry:
+    _analyzers = [
+        LLMAnalyzer,
+        YourAnalyzer,  # Add here
+        # ... other analyzers
+    ]
 ```
 
 ---
@@ -432,14 +498,14 @@ kill -9 <PID>
    find . -type f \( -name "*.py" -o -name "*.js" \) | wc -l
    ```
 
-### No Issues Found
+### Export Fails
 
-**Problem**: Scan completes but finds 0 issues
+**Problem**: Export button doesn't work or export fails
 
 **Solution**:
-1. Verify supported file types exist in workspace
-2. Check exclusion patterns aren't too broad
-3. Review analyzer logs in backend console
+1. Ensure backend dependencies are installed: `pip install -r requirements.txt`
+2. Check that pandas, openpyxl, python-docx, and reportlab are installed
+3. Restart the backend server
 
 ---
 
@@ -501,11 +567,14 @@ Contributions welcome! Please:
 
 ## 🎯 Roadmap
 
-- [ ] More language support (Go, Rust, Java)
-- [ ] AI-powered suggestions
+- [x] Multi-language support (Python, JS/TS, Java, Go, Rust, SQL, JSON)
+- [x] AI-powered analysis with multiple LLM providers
+- [x] Export to multiple formats (Excel, CSV, Word, PDF, etc.)
+- [x] Tabbed severity views in reports
 - [ ] Custom rule configuration
 - [ ] CI/CD integration
 - [ ] Team collaboration features
+- [ ] Historical trend analysis
 
 ---
 

@@ -9,6 +9,9 @@ from .javascript_analyzer import JavaScriptAnalyzer
 from .sql_analyzer import SQLAnalyzer
 from .json_analyzer import JSONAnalyzer
 from .llm_analyzer import LLMAnalyzer
+from .go_analyzer import GoAnalyzer
+from .rust_analyzer import RustAnalyzer
+from .java_analyzer import JavaAnalyzer
 
 
 class AnalyzerRegistry:
@@ -19,6 +22,9 @@ class AnalyzerRegistry:
         LLMAnalyzer,  # Try LLM first if available
         PythonAnalyzer,
         JavaScriptAnalyzer,
+        JavaAnalyzer,
+        GoAnalyzer,
+        RustAnalyzer,
         SQLAnalyzer,
         JSONAnalyzer,
     ]
