@@ -1,6 +1,6 @@
 - 🎨 **VS Code Integration** - Seamless integration with Problems panel and WebView reports
 - 🔧 **Customizable** - Filter by category and severity
-- 📊 **Rich Reports** - Interactive HTML reports with filtering
+- 📊 **Rich Reports** - Interactive HTML reports with tabbed severity views and filtering
 - 🔄 **Smart Fallback** - Automatically falls back to pattern-based analysis when LLM unavailable
 
 ---
@@ -102,8 +102,8 @@ Open any project containing Python, JavaScript, TypeScript, React, or SQL files.
 
 **WebView Report:**
 - A detailed HTML report opens automatically
+- **New in v1.2**: Tabbed view for Error, Warning, and Info severities
 - Filter by category (Security, Bugs, Performance, Maintainability)
-- Filter by severity (Error, Warning, Info)
 
 ---
 
@@ -170,8 +170,8 @@ Create `.vscode/settings.json` in your project:
 ### Filtering Results
 
 **In WebView Report:**
+- **Tabbed View**: Switch between Error, Warning, and Info tabs
 - **Category Filters**: Security, Bugs, Performance, Maintainability
-- **Severity Filters**: Error, Warning, Info
 - Click checkboxes to show/hide issues
 
 **In Problems Panel:**
@@ -180,7 +180,7 @@ Create `.vscode/settings.json` in your project:
 
 ### 🤖 AI-Powered Analysis (Optional)
 
-CodeReviewPro v1.1 supports optional LLM integration for more intelligent, context-aware code reviews.
+CodeReviewPro v1.2 supports optional LLM integration for more intelligent, context-aware code reviews.
 
 #### Supported Providers
 

@@ -6,7 +6,7 @@ Advanced peer review and code quality assessment extension for Visual Studio Cod
 
 - 🔍 **Comprehensive Code Analysis**: Analyzes Python, JavaScript/TypeScript, Java, Go, SQL, JSON, XML, BigQuery, and Airflow DAGs
 - 🛡️ **Security Scanning**: Detects OWASP Top 10 vulnerabilities and security issues
-- 📊 **Rich Reports**: Interactive WebView reports with filtering and categorization
+- 📊 **Rich Reports**: Interactive WebView reports with tabbed severity views, filtering, and categorization
 - 🔄 **Scan Comparison**: Track progress by comparing scans over time
 - 💡 **Actionable Recommendations**: Get specific, ready-to-implement fix suggestions
 - ⚡ **Real-time Diagnostics**: Issues appear directly in VS Code's Problems panel
@@ -36,7 +36,7 @@ Advanced peer review and code quality assessment extension for Visual Studio Cod
 1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
 2. Run `CodeReviewPro: Scan Current Workspace`
 3. Wait for the scan to complete
-4. View results in the Problems panel and WebView report
+4. View results in the Problems panel and the new tabbed WebView report
 
 ### Viewing Reports
 
