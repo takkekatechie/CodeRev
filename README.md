@@ -184,11 +184,11 @@ CodeReviewPro v1.2 supports optional LLM integration for more intelligent, conte
 
 #### Supported Providers
 
-- **OpenAI** (GPT-4, GPT-3.5-turbo)
-- **Google Gemini** (Gemini Pro, Gemini 1.5 Pro)
-- **Anthropic** (Claude-3 Opus, Sonnet, Haiku)
-- **Perplexity** (pplx-70b-online)
-- **OpenRouter** (Access to multiple models)
+- **OpenAI**
+- **Google Gemini**
+- **Anthropic**
+- **Perplexity**
+- **OpenRouter**
 
 #### Setup
 

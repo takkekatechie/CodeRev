@@ -138,12 +138,17 @@ export class ServerClient {
     /**
      * Export report in specified format
      */
-    async exportReport(scanId: string, format: 'markdown' | 'html' | 'pdf'): Promise<string> {
+    async exportReport(scanId: string, format: 'markdown' | 'html' | 'pdf' | 'csv' | 'excel' | 'text' | 'word'): Promise<Buffer> {
         try {
-            const response = await this.client.get<{ content: string }>(`/api/scan/${scanId}/export`, {
+            const response = await this.client.get<{ content: string, is_binary: boolean }>(`/api/scan/${scanId}/export`, {
                 params: { format },
             });
-            return response.data.content;
+
+            if (response.data.is_binary) {
+                return Buffer.from(response.data.content, 'base64');
+            } else {
+                return Buffer.from(response.data.content, 'utf-8');
+            }
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 throw new Error(`Failed to export report: ${error.message}`);

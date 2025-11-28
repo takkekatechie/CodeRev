@@ -113,6 +113,24 @@ def compare_scans():
         logger.error(f"Error comparing: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/scan/<scan_id>/export', methods=['GET'])
+def export_scan_report(scan_id):
+    try:
+        format_type = request.args.get('format', 'text')
+        results = scanner.get_scan_results(scan_id)
+        
+        if 'error' in results:
+            return jsonify(results), 404 if results['error'] == 'Scan not found' else 400
+            
+        from exporters import export_report
+        export_data = export_report(results, format_type)
+        
+        return jsonify(export_data), 200
+        
+    except Exception as e:
+        logger.error(f"Error exporting report: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
 def main():
     logger.info("Starting CodeReviewPro server on http://localhost:5000")
     app.run(host='0.0.0.0', port=5000, debug=False)

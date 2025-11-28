@@ -68,6 +68,18 @@ Access settings via `CodeReviewPro: Configure Settings` or manually edit:
 }
 ```
 
+## 🤖 AI-Powered Analysis
+
+CodeReviewPro supports optional LLM integration for more intelligent, context-aware code reviews.
+
+### Supported Providers
+
+- **OpenAI** (GPT-4, GPT-3.5-turbo)
+- **Google Gemini** (Gemini Pro, Gemini 1.5 Pro)
+- **Anthropic** (Claude-3 Opus, Sonnet, Haiku)
+- **Perplexity** (pplx-70b-online)
+- **OpenRouter** (Access to multiple models)
+
 ## Supported Languages
 
 - Python

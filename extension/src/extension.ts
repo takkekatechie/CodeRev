@@ -254,7 +254,7 @@ async function exportReport() {
         }
 
         const format = await vscode.window.showQuickPick(
-            ['markdown', 'html', 'pdf'],
+            ['markdown', 'html', 'pdf', 'csv', 'excel', 'text', 'word'],
             { placeHolder: 'Select export format' }
         );
 
@@ -264,16 +264,22 @@ async function exportReport() {
 
         const content = await serverClient.exportReport(latestScan.scanId, format as any);
 
+        // Determine file extension
+        let extension = format;
+        if (format === 'excel') extension = 'xlsx';
+        if (format === 'word') extension = 'docx';
+        if (format === 'text') extension = 'txt';
+
         // Save to file
         const uri = await vscode.window.showSaveDialog({
-            defaultUri: vscode.Uri.file(`codereviewpro-report.${format}`),
+            defaultUri: vscode.Uri.file(`codereviewpro-report.${extension}`),
             filters: {
-                [format.toUpperCase()]: [format],
+                [format.toUpperCase()]: [extension],
             },
         });
 
         if (uri) {
-            await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf-8'));
+            await vscode.workspace.fs.writeFile(uri, content);
             vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
         }
     } catch (error) {
