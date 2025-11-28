@@ -113,9 +113,31 @@ class ReportView {
       </div>
     </section>
 
-    ${this.renderIssueSection('🆕 New Issues', newIssues)}
-    ${this.renderIssueSection('✅ Fixed Issues', fixedIssues)}
-    ${this.renderIssueSection('⚠️ Remaining Issues', remainingIssues)}
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="error">
+        <span class="tab-icon">🔴</span> Errors
+        <span class="tab-count">${this.countBySeverity(newIssues.concat(remainingIssues), 'error')}</span>
+      </button>
+      <button class="tab-btn" data-tab="warning">
+        <span class="tab-icon">🟡</span> Warnings
+        <span class="tab-count">${this.countBySeverity(newIssues.concat(remainingIssues), 'warning')}</span>
+      </button>
+      <button class="tab-btn" data-tab="info">
+        <span class="tab-icon">🔵</span> Info
+        <span class="tab-count">${this.countBySeverity(newIssues.concat(remainingIssues), 'info')}</span>
+      </button>
+    </div>
+
+    <div id="error-content" class="tab-content active">
+      ${this.renderIssuesBySeverity(newIssues.concat(remainingIssues), 'error')}
+    </div>
+    <div id="warning-content" class="tab-content">
+      ${this.renderIssuesBySeverity(newIssues.concat(remainingIssues), 'warning')}
+    </div>
+    <div id="info-content" class="tab-content">
+      ${this.renderIssuesBySeverity(newIssues.concat(remainingIssues), 'info')}
+    </div>
+
   </div>
 
   <script>
@@ -124,41 +146,31 @@ class ReportView {
 </body>
 </html>`;
     }
-    renderIssueSection(title, issues) {
-        if (issues.length === 0) {
-            return `<section class="issues-section">
-          <h2>${title}</h2>
-          <p class="no-issues">No issues found.</p>
-        </section>`;
-        }
-        const issuesByCategory = this.groupByCategory(issues);
-        let html = `<section class="issues-section">
-      <h2>${title}</h2>
-      <div class="filters">
-        <div class="filter-group">
-          <strong>Category:</strong>
-          <label><input type="checkbox" class="cat-filter" data-cat="security" checked> Security</label>
-          <label><input type="checkbox" class="cat-filter" data-cat="bug" checked> Bugs</label>
-          <label><input type="checkbox" class="cat-filter" data-cat="performance" checked> Performance</label>
-          <label><input type="checkbox" class="cat-filter" data-cat="maintainability" checked> Maintainability</label>
-        </div>
-        <div class="filter-group">
-          <strong>Severity:</strong>
-          <label><input type="checkbox" class="sev-filter" data-sev="error" checked> Error</label>
-          <label><input type="checkbox" class="sev-filter" data-sev="warning" checked> Warning</label>
-          <label><input type="checkbox" class="sev-filter" data-sev="info" checked> Info</label>
-        </div>
+    countBySeverity(issues, severity) {
+        return issues.filter(i => i.severity.toLowerCase() === severity.toLowerCase()).length;
+    }
+    renderIssuesBySeverity(issues, severity) {
+        const filteredIssues = issues.filter(i => i.severity.toLowerCase() === severity.toLowerCase());
+        if (filteredIssues.length === 0) {
+            return `<div class="no-issues">
+        <p>No ${severity}s found. Great job! 🎉</p>
       </div>`;
+        }
+        const issuesByCategory = this.groupByCategory(filteredIssues);
+        let html = '';
         for (const [category, catIssues] of Object.entries(issuesByCategory)) {
-            html += `<div class="cat-section" data-cat="${category}">
+            html += `<div class="cat-section">
           <h3 class="cat-header ${category}">${this.getCategoryIcon(category)} ${this.capitalize(category)}</h3>
           <div class="issues-list">
             ${catIssues.map(issue => this.renderIssue(issue)).join('')}
           </div>
         </div>`;
         }
-        html += `</section>`;
         return html;
+    }
+    // Kept for backward compatibility if needed, but not used in new layout
+    renderIssueSection(title, issues) {
+        return '';
     }
     renderIssue(issue) {
         return `<div class="issue-card ${issue.severity}" data-sev="${issue.severity}">
@@ -224,13 +236,32 @@ class ReportView {
       .summary-card.total { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
       .card-value { font-size: 2.5em; font-weight: bold; margin-bottom: 5px; }
       .card-label { font-size: 0.9em; opacity: 0.8; }
-      .issues-section { margin: 30px 0; }
-      .filters { margin: 15px 0; padding: 15px; background: var(--vscode-editor-inactiveSelectionBackground); border-radius: 5px; }
-      .filter-group { margin: 10px 0; display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
-      .filter-group strong { margin-right: 10px; }
-      .filters label { cursor: pointer; user-select: none; }
+      
+      /* Tabs */
+      .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--vscode-panel-border); }
+      .tab-btn {
+        background: none;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-size: 1em;
+        color: var(--vscode-foreground);
+        opacity: 0.7;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .tab-btn:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground); }
+      .tab-btn.active { opacity: 1; border-bottom-color: var(--vscode-button-background); font-weight: bold; }
+      .tab-count { background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+      
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
       .cat-section { margin: 20px 0; }
-      .cat-section.hidden { display: none; }
       .cat-header { padding: 10px; border-radius: 5px; margin-bottom: 10px; }
       .cat-header.security { background: rgba(239, 68, 68, 0.2); }
       .cat-header.bug { background: rgba(245, 158, 11, 0.2); }
@@ -250,31 +281,26 @@ class ReportView {
       .line-number { font-size: 0.85em; opacity: 0.7; }
       .issue-description { margin: 10px 0; line-height: 1.5; }
       .issue-recommendation { margin: 10px 0; padding: 10px; background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; border-radius: 3px; }
-      .no-issues { padding: 20px; text-align: center; opacity: 0.7; font-style: italic; }
+      .no-issues { padding: 40px; text-align: center; opacity: 0.7; font-size: 1.2em; background: var(--vscode-editor-inactiveSelectionBackground); border-radius: 8px; margin-top: 20px; }
     `;
     }
     getScripts() {
         return `
-      // Category filtering
-      document.querySelectorAll('.cat-filter').forEach(cb => {
-        cb.addEventListener('change', (e) => {
-          const cat = e.target.dataset.cat;
-          const sections = document.querySelectorAll(\`.cat-section[data-cat="\${cat}"]\`);
-          sections.forEach(s => s.classList.toggle('hidden', !e.target.checked));
+      // Tab switching logic
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          // Remove active class from all tabs and contents
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          
+          // Add active class to clicked tab
+          btn.classList.add('active');
+          
+          // Show corresponding content
+          const tabId = btn.dataset.tab;
+          document.getElementById(tabId + '-content').classList.add('active');
         });
       });
-
-      // Severity filtering
-      document.querySelectorAll('.sev-filter').forEach(cb => {
-        cb.addEventListener('change', () => filterBySeverity());
-      });
-
-      function filterBySeverity() {
-        const checked = Array.from(document.querySelectorAll('.sev-filter:checked')).map(cb => cb.dataset.sev);
-        document.querySelectorAll('.issue-card').forEach(card => {
-          card.style.display = checked.includes(card.dataset.sev) ? '' : 'none';
-        });
-      }
     `;
     }
     dispose() {

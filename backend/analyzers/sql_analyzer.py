@@ -99,7 +99,3 @@ class SQLAnalyzer(BaseAnalyzer):
                 ))
         
         return issues
-
-# Register the analyzer
-from . import AnalyzerRegistry
-AnalyzerRegistry.register('sql', SQLAnalyzer)

@@ -207,7 +207,3 @@ class PythonAnalyzer(BaseAnalyzer):
         """Check if augmented assignment is a string operation"""
         # This is a simplified check
         return True  # In practice, would need type inference
-
-# Register the analyzer
-from . import AnalyzerRegistry
-AnalyzerRegistry.register('python', PythonAnalyzer)

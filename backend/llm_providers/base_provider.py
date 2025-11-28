@@ -54,19 +54,93 @@ class BaseLLMProvider(ABC):
             language: Programming language of the file
         
         Returns:
-            List of issues found in the format:
-            [
-                {
-                    'category': 'security|bug|performance|maintainability',
-                    'severity': 'error|warning|info',
-                    'line_start': int,
-                    'line_end': int,
-                    'description': str,
-                    'recommendation': str
-                }
-            ]
+            List of issues found
         """
         pass
+    
+    def analyze_code_batch(self, files: List[Dict[str, str]]) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Analyze multiple files in one API call (batch processing)
+        No timeout limit - will wait for LLM to complete
+        
+        Args:
+            files: List of dicts with 'path', 'content', 'language' keys
+        
+        Returns:
+            Dict mapping file paths to their issues
+        """
+        # Default implementation: call analyze_code for each file
+        # Providers can override for true batch processing
+        results = {}
+        for file_info in files:
+            try:
+                issues = self.analyze_code(
+                    file_info['path'],
+                    file_info['content'],
+                    file_info['language']
+                )
+                results[file_info['path']] = issues
+            except Exception:
+                results[file_info['path']] = []
+        
+        return results
+    
+    def build_batch_prompt(self, files: List[Dict[str, str]]) -> str:
+        """Build optimized prompt for analyzing multiple files"""
+        prompt = "You are an expert code reviewer. Analyze the following code files and identify issues in each.\n\nFiles to analyze:\n"
+        
+        for i, file_info in enumerate(files, 1):
+            prompt += f"\n--- File {i}: {file_info['path']} ({file_info['language']}) ---\n"
+            prompt += f"```{file_info['language']}\n{file_info['content']}\n```\n"
+        
+        prompt += """
+For EACH file, identify issues in these categories:
+1. Security vulnerabilities (SQL injection, XSS, hardcoded secrets, etc.)
+2. Bugs and logic errors
+3. Performance issues
+4. Maintainability and code quality issues
+
+Format your response as a JSON object where keys are file paths and values are arrays of issues:
+{
+  "file1.py": [
+    {
+      "category": "security",
+      "severity": "error",
+      "line_start": 10,
+      "line_end": 10,
+      "description": "Hardcoded API key detected",
+      "recommendation": "Move API key to environment variables"
+    }
+  ],
+  "file2.js": []
+}
+
+If a file has no issues, use an empty array.
+"""
+        return prompt
+    
+    def parse_batch_response(self, response: str, file_paths: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+        """Parse batch response and extract per-file issues"""
+        import json
+        import re
+        
+        try:
+            # Try to find JSON object in the response
+            json_match = re.search(r'\{[\s\S]*\}', response)
+            if json_match:
+                result = json.loads(json_match.group())
+                if isinstance(result, dict):
+                    # Ensure all files are in the result
+                    for path in file_paths:
+                        if path not in result:
+                            result[path] = []
+                    return result
+            
+            # If parsing fails, return empty results for all files
+            return {path: [] for path in file_paths}
+            
+        except json.JSONDecodeError:
+            return {path: [] for path in file_paths}
     
     def check_rate_limit(self) -> bool:
         """Check if we're within rate limits"""

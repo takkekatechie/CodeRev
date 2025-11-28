@@ -188,5 +188,16 @@ class Config:
         if not cls.LLM_ENABLED or not cls.LLM_PROVIDER:
             return {}
         
-        return cls.LLM_CONFIG.get(cls.LLM_PROVIDER, {})
+        # Get provider-specific config
+        provider_config = cls.LLM_CONFIG.get(cls.LLM_PROVIDER, {})
+        
+        # Add common settings to provider config
+        if provider_config:
+            provider_config = provider_config.copy()
+            provider_config['rate_limit'] = cls.LLM_CONFIG.get('rate_limit', {})
+            provider_config['fallback_on_error'] = cls.LLM_CONFIG.get('fallback_on_error', True)
+            provider_config['check_credits'] = cls.LLM_CONFIG.get('check_credits', True)
+        
+        return provider_config
+
 

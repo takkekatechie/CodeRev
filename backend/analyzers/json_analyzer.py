@@ -102,7 +102,3 @@ class JSONAnalyzer(BaseAnalyzer):
             return max(self._get_max_depth(item, current_depth + 1) for item in data)
         else:
             return current_depth
-
-# Register the analyzer
-from . import AnalyzerRegistry
-AnalyzerRegistry.register('json', JSONAnalyzer)

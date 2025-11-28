@@ -18,7 +18,7 @@ scanner = ScanOrchestrator()
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    return jsonify({'status': 'healthy', 'version': '1.1.0'}), 200
+    return jsonify({'status': 'healthy', 'version': '1.2.0'}), 200
 
 @app.route('/api/scan', methods=['POST'])
 def start_scan():
@@ -71,6 +71,18 @@ def get_scan_results(scan_id):
         return jsonify(results), 200
     except Exception as e:
         logger.error(f"Error getting results: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/history', methods=['GET'])
+def get_history():
+    try:
+        repo_path = request.args.get('repo_path')
+        limit = int(request.args.get('limit', 50))
+        
+        history = scanner.storage.get_history(repo_path, limit)
+        return jsonify(history), 200
+    except Exception as e:
+        logger.error(f"Error getting history: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/scan/compare', methods=['POST'])

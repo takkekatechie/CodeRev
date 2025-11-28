@@ -20,11 +20,15 @@ from config import Config
 
 logger = get_logger(__name__)
 
+from storage import StorageManager
+import hashlib
+
 class ScanOrchestrator:
     """Orchestrates code scanning and analysis"""
     
     def __init__(self):
-        self.scans = {}  # In-memory storage
+        self.storage = StorageManager()
+        self.scans = {}  # Keep in-memory for active scans
         self.current_progress = {}
         
         # Load LLM configuration
@@ -59,7 +63,7 @@ class ScanOrchestrator:
         return scan_id
     
     def _run_scan(self, scan_id: str, repo_path: str, exclude_patterns: List[str]):
-        """Run the scan"""
+        """Run the scan with batch processing for LLM"""
         try:
             scan = self.scans[scan_id]
             
@@ -73,16 +77,107 @@ class ScanOrchestrator:
             
             logger.info(f"Scanning {len(files)} files")
             
-            # Analyze files
+            # Try batch LLM analysis first
             issues = []
-            for i, file_path in enumerate(files):
-                file_issues = self._analyze_file(file_path)
-                issues.extend(file_issues)
-                scan['progress'] = ((i + 1) / len(files)) * 100
+            llm_analyzed_files = set()
+            
+            try:
+                from analyzers.llm_analyzer import LLMAnalyzer
+                llm_analyzer = LLMAnalyzer()
+                
+                if llm_analyzer.is_available():
+                    # Prepare files for batch analysis
+                    files_to_analyze = []
+                    for file_path in files:
+                        content = read_file_safe(file_path, Config.MAX_FILE_SIZE)
+                        if content:
+                            files_to_analyze.append((file_path, content))
+                    
+                    # Batch analyze with LLM
+                    logger.info(f"Batch analyzing {len(files_to_analyze)} files with LLM")
+                    
+                    # Smart Fallback: Check knowledge base first
+                    files_for_llm = []
+                    for file_path, content in files_to_analyze:
+                        content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
+                        cached_issues = self.storage.get_knowledge(content_hash)
+                        
+                        if cached_issues is not None:
+                            # Found in knowledge base! Use it.
+                            logger.info(f"Smart Fallback: Using cataloged findings for {file_path}")
+                            llm_analyzed_files.add(file_path)
+                            for issue in cached_issues:
+                                issues.append({
+                                    'category': issue.get('category'),
+                                    'severity': issue.get('severity'),
+                                    'filePath': file_path,
+                                    'lineStart': issue.get('line_start'),
+                                    'lineEnd': issue.get('line_end'),
+                                    'description': issue.get('description'),
+                                    'recommendation': issue.get('recommendation'),
+                                })
+                        else:
+                            files_for_llm.append((file_path, content))
+                    
+                    if files_for_llm:
+                        logger.info(f"Sending {len(files_for_llm)} files to LLM API")
+                        batch_results = llm_analyzer.analyze_files_batch(files_for_llm)
+                        
+                        # Convert batch results to issues and catalog them
+                        for file_path, file_issues in batch_results.items():
+                            if file_issues:
+                                llm_analyzed_files.add(file_path)
+                                
+                                # Catalog findings
+                                content = next((c for p, c in files_for_llm if p == file_path), "")
+                                if content:
+                                    content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
+                                    # Convert Issue objects to dicts for storage
+                                    issues_dict = []
+                                    for issue in file_issues:
+                                        issues_dict.append({
+                                            'category': issue.category,
+                                            'severity': issue.severity,
+                                            'line_start': issue.line_start,
+                                            'line_end': issue.line_end,
+                                            'description': issue.description,
+                                            'recommendation': issue.recommendation
+                                        })
+                                    self.storage.save_knowledge(content_hash, issues_dict)
+                                
+                                for issue in file_issues:
+                                    issues.append({
+                                        'category': issue.category,
+                                        'severity': issue.severity,
+                                        'filePath': issue.file_path,
+                                        'lineStart': issue.line_start,
+                                        'lineEnd': issue.line_end,
+                                        'description': issue.description,
+                                        'recommendation': issue.recommendation,
+                                    })
+                    
+                    logger.info(f"LLM analysis completed: {len(llm_analyzed_files)} files analyzed (Smart Fallback + API)")
+            except Exception as e:
+                logger.error(f"LLM batch analysis failed: {e}")
+            
+            # Fallback to pattern-based analysis for files not analyzed by LLM
+            remaining_files = [f for f in files if f not in llm_analyzed_files]
+            if remaining_files:
+                logger.info(f"Analyzing {len(remaining_files)} files with pattern-based analyzers")
+                for i, file_path in enumerate(remaining_files):
+                    file_issues = self._analyze_file(file_path)
+                    issues.extend(file_issues)
+                    scan['progress'] = ((len(llm_analyzed_files) + i + 1) / len(files)) * 100
+            else:
+                scan['progress'] = 100
             
             scan['issues'] = issues
             scan['status'] = 'completed'
             scan['end_time'] = time.time()
+            scan['version'] = '1.2.0'
+            
+            # Save to persistent storage
+            self.storage.save_scan(scan)
             
             logger.info(f"Scan {scan_id} completed: {len(issues)} issues in {len(files)} files")
             
