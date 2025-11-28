@@ -323,31 +323,53 @@ class ScanOrchestrator:
     
     def get_scan_results(self, scan_id: str) -> Dict[str, Any]:
         """Get scan results"""
-        if scan_id not in self.scans:
-            return {'error': 'Scan not found'}
-        
-        scan = self.scans[scan_id]
-        
-        if scan['status'] != 'completed':
-            return {'error': 'Scan not completed'}
-        
-        # Calculate summary
-        issues_by_category = defaultdict(int)
-        issues_by_severity = defaultdict(int)
-        
-        for issue in scan['issues']:
-            issues_by_category[issue['category']] += 1
-            issues_by_severity[issue['severity']] += 1
-        
-        return {
-            'scanId': scan_id,
-            'repositoryPath': scan['repo_path'],
-            'detectedLanguages': scan['languages'],
-            'totalFiles': scan['total_files'],
-            'issues': scan['issues'],
-            'summary': {
-                'totalIssues': len(scan['issues']),
-                'issuesByCategory': dict(issues_by_category),
-                'issuesBySeverity': dict(issues_by_severity),
+        # Try memory first
+        if scan_id in self.scans:
+            scan = self.scans[scan_id]
+            
+            if scan['status'] != 'completed':
+                return {'error': 'Scan not completed'}
+            
+            # Calculate summary
+            issues_by_category = defaultdict(int)
+            issues_by_severity = defaultdict(int)
+            
+            for issue in scan['issues']:
+                issues_by_category[issue['category']] += 1
+                issues_by_severity[issue['severity']] += 1
+            
+            return {
+                'scanId': scan_id,
+                'repositoryPath': scan['repo_path'],
+                'detectedLanguages': scan['languages'],
+                'totalFiles': scan['total_files'],
+                'issues': scan['issues'],
+                'summary': {
+                    'totalIssues': len(scan['issues']),
+                    'issuesByCategory': dict(issues_by_category),
+                    'issuesBySeverity': dict(issues_by_severity),
+                },
+                'scanDate': time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(scan.get('end_time', time.time())))
             }
-        }
+        
+        # Try storage
+        scan = self.storage.get_scan(scan_id)
+        if scan:
+            # Map storage format to API format
+            # Storage returns issues with camelCase keys already (see storage.py)
+            result = {
+                'scanId': scan['id'],
+                'repositoryPath': scan['repo_path'],
+                'detectedLanguages': scan['languages'],
+                'totalFiles': scan['total_files'],
+                'issues': scan['issues'],
+                'summary': scan['summary']
+            }
+            
+            if scan.get('timestamp'):
+                from datetime import datetime
+                result['scanDate'] = datetime.fromtimestamp(scan['timestamp']).isoformat()
+                
+            return result
+            
+        return {'error': 'Scan not found'}

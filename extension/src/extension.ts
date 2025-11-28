@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Initialize components
     serverClient = new ServerClient();
     diagnosticProvider = new DiagnosticProvider();
-    reportView = new ReportView(context.extensionUri);
+    reportView = new ReportView(context.extensionUri, serverClient);
 
     // Create status bar item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
@@ -134,7 +134,7 @@ async function scanWorkspace() {
                 diagnosticProvider.updateDiagnostics(scanResult, workspaceRoot);
 
                 // Show report
-                reportView.show(comparison);
+                await reportView.show(comparison);
 
                 statusBarItem.text = '$(check) Scan Complete';
                 setTimeout(() => {
@@ -184,7 +184,7 @@ async function viewReport() {
         }
 
         const comparison = await serverClient.compareScans(latestScan.scanId);
-        reportView.show(comparison);
+        await reportView.show(comparison);
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to view report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -231,7 +231,7 @@ async function compareScans() {
         }
 
         const comparison = await serverClient.compareScans(currentScan.scanId, previousScan.scanId);
-        reportView.show(comparison);
+        await reportView.show(comparison);
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to compare scans: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

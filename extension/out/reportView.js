@@ -39,13 +39,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportView = void 0;
 const vscode = __importStar(require("vscode"));
 class ReportView {
-    constructor(extensionUri) {
+    constructor(extensionUri, serverClient) {
+        this.scanHistory = [];
         this.extensionUri = extensionUri;
+        this.serverClient = serverClient;
     }
     /**
      * Show the report view
      */
-    show(result) {
+    async show(result) {
+        // Store the current scan ID and repository path
+        this.currentScanId = result.currentScan.scanId;
+        this.repositoryPath = result.currentScan.repositoryPath;
+        // Load scan history
+        if (this.serverClient && this.repositoryPath) {
+            try {
+                this.scanHistory = await this.serverClient.getScanHistory(this.repositoryPath);
+            }
+            catch (error) {
+                console.error('Failed to load scan history:', error);
+                this.scanHistory = [];
+            }
+        }
         if (this.panel) {
             this.panel.reveal(vscode.ViewColumn.One);
         }
@@ -56,6 +71,16 @@ class ReportView {
             });
             this.panel.onDidDispose(() => {
                 this.panel = undefined;
+                this.currentScanId = undefined;
+            });
+            // Handle messages from webview
+            this.panel.webview.onDidReceiveMessage(async (message) => {
+                if (message.command === 'export') {
+                    this.handleExport();
+                }
+                else if (message.command === 'loadScan') {
+                    await this.handleLoadScan(message.scanId);
+                }
             });
         }
         this.panel.webview.html = this.getHtmlContent(result);
@@ -75,10 +100,31 @@ class ReportView {
 <body>
   <div class="container">
     <header>
-      <h1>🔍 CodeReviewPro Report</h1>
-      <div class="metadata">
-        <p><strong>Scan Date:</strong> ${currentScan.scanDate ? new Date(currentScan.scanDate).toLocaleString() : new Date().toLocaleString()}</p>
-        <p><strong>Repository:</strong> ${currentScan.repositoryPath || 'Unknown'}</p>
+      <div class="header-content">
+        <div>
+          <h1>🔍 CodeReviewPro Report</h1>
+          <div class="metadata">
+            <p><strong>Scan Date:</strong> ${currentScan.scanDate ? new Date(currentScan.scanDate).toLocaleString() : new Date().toLocaleString()}</p>
+            <p><strong>Repository:</strong> ${currentScan.repositoryPath || 'Unknown'}</p>
+            ${this.scanHistory.length > 1 ? `
+            <div class="scan-selector">
+              <label for="scan-history"><strong>View Past Scans:</strong></label>
+              <select id="scan-history" onchange="loadSelectedScan(this.value)">
+                ${this.scanHistory.filter(s => s && s.scanId).map(scan => {
+            const dateStr = scan.scanDate ? new Date(scan.scanDate).toLocaleString() : 'Unknown Date';
+            const issueCount = scan.summary?.totalIssues !== undefined ? scan.summary.totalIssues : (scan.issues?.length || 0);
+            return `<option value="${scan.scanId}" ${scan.scanId === currentScan.scanId ? 'selected' : ''}>
+                    ${dateStr} - ${issueCount} issues
+                  </option>`;
+        }).join('')}
+              </select>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+        <button class="export-btn" onclick="exportReport()">
+          <span class="export-icon">📥</span> Export Report
+        </button>
       </div>
     </header>
 
@@ -160,7 +206,13 @@ class ReportView {
         let html = '';
         for (const [category, catIssues] of Object.entries(issuesByCategory)) {
             html += `<div class="cat-section">
-          <h3 class="cat-header ${category}">${this.getCategoryIcon(category)} ${this.capitalize(category)}</h3>
+          <h3 class="cat-header ${category}" onclick="toggleCategory(this)">
+            <span class="cat-title">
+              ${this.getCategoryIcon(category)} ${this.capitalize(category)}
+              <span class="cat-count">(${catIssues.length})</span>
+            </span>
+            <span class="chevron">▼</span>
+          </h3>
           <div class="issues-list">
             ${catIssues.map(issue => this.renderIssue(issue)).join('')}
           </div>
@@ -222,6 +274,37 @@ class ReportView {
       }
       .container { max-width: 1200px; margin: 0 auto; }
       header { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--vscode-panel-border); }
+      .header-content { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+      .scan-selector { margin-top: 10px; }
+      .scan-selector label { display: block; margin-bottom: 5px; font-size: 0.9em; }
+      .scan-selector select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid var(--vscode-input-border);
+        background: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border-radius: 3px;
+        font-size: 0.9em;
+        cursor: pointer;
+      }
+      .scan-selector select:hover { border-color: var(--vscode-focusBorder); }
+      .scan-selector select:focus { outline: 1px solid var(--vscode-focusBorder); }
+      .export-btn {
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+        white-space: nowrap;
+      }
+      .export-btn:hover { background: var(--vscode-button-hoverBackground); }
+      .export-icon { font-size: 1.1em; }
       h1 { font-size: 2em; margin-bottom: 10px; }
       h2 { font-size: 1.5em; margin: 20px 0 15px; }
       h3 { font-size: 1.2em; margin: 15px 0 10px; }
@@ -262,12 +345,27 @@ class ReportView {
       @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
       .cat-section { margin: 20px 0; }
-      .cat-header { padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+      .cat-header { 
+        padding: 10px; 
+        border-radius: 5px; 
+        margin-bottom: 10px; 
+        cursor: pointer; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+        user-select: none;
+      }
+      .cat-header:hover { opacity: 0.9; filter: brightness(1.1); }
       .cat-header.security { background: rgba(239, 68, 68, 0.2); }
       .cat-header.bug { background: rgba(245, 158, 11, 0.2); }
       .cat-header.performance { background: rgba(59, 130, 246, 0.2); }
       .cat-header.maintainability { background: rgba(16, 185, 129, 0.2); }
-      .issues-list { display: flex; flex-direction: column; gap: 15px; }
+      .cat-title { display: flex; align-items: center; gap: 8px; }
+      .cat-count { font-size: 0.8em; opacity: 0.7; }
+      .chevron { transition: transform 0.3s; }
+      .cat-header.collapsed .chevron { transform: rotate(-90deg); }
+      .issues-list { display: flex; flex-direction: column; gap: 15px; transition: all 0.3s ease; }
+      .issues-list.hidden { display: none; }
       .issue-card { padding: 15px; border-left: 4px solid; background: var(--vscode-editor-inactiveSelectionBackground); border-radius: 5px; }
       .issue-card.error { border-left-color: #ef4444; }
       .issue-card.warning { border-left-color: #f59e0b; }
@@ -286,22 +384,110 @@ class ReportView {
     }
     getScripts() {
         return `
+      // Get VS Code API
+      const vscode = acquireVsCodeApi();
+      
+      // Export function
+      function exportReport() {
+        vscode.postMessage({ command: 'export' });
+      }
+      
+      // Load selected scan
+      function loadSelectedScan(scanId) {
+        if (scanId) {
+          vscode.postMessage({ command: 'loadScan', scanId: scanId });
+        }
+      }
+      
+      // Toggle category visibility
+      function toggleCategory(header) {
+        const issuesList = header.nextElementSibling;
+        issuesList.classList.toggle('hidden');
+        header.classList.toggle('collapsed');
+      }
+      
       // Tab switching logic
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          // Remove active class from all tabs and contents
-          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-          
-          // Add active class to clicked tab
-          btn.classList.add('active');
-          
-          // Show corresponding content
-          const tabId = btn.dataset.tab;
-          document.getElementById(tabId + '-content').classList.add('active');
+      // Tab switching logic
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            // Remove active class from all tabs and contents
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            btn.classList.add('active');
+            
+            // Show corresponding content
+            const tabId = btn.dataset.tab;
+            const content = document.getElementById(tabId + '-content');
+            if (content) {
+              content.classList.add('active');
+            }
+          });
         });
       });
     `;
+    }
+    async handleExport() {
+        if (!this.currentScanId) {
+            vscode.window.showErrorMessage('No scan ID available for export.');
+            return;
+        }
+        if (!this.serverClient) {
+            vscode.window.showErrorMessage('Server client not available.');
+            return;
+        }
+        try {
+            const format = await vscode.window.showQuickPick(['markdown', 'html', 'pdf', 'csv', 'excel', 'text', 'word'], { placeHolder: 'Select export format' });
+            if (!format) {
+                return;
+            }
+            const content = await this.serverClient.exportReport(this.currentScanId, format);
+            // Determine file extension
+            let extension = format;
+            if (format === 'excel')
+                extension = 'xlsx';
+            if (format === 'word')
+                extension = 'docx';
+            if (format === 'text')
+                extension = 'txt';
+            // Save to file
+            const uri = await vscode.window.showSaveDialog({
+                defaultUri: vscode.Uri.file(`codereviewpro-report.${extension}`),
+                filters: {
+                    [format.toUpperCase()]: [extension],
+                },
+            });
+            if (uri) {
+                await vscode.workspace.fs.writeFile(uri, content);
+                vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
+            }
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+    async handleLoadScan(scanId) {
+        if (!this.serverClient) {
+            vscode.window.showErrorMessage('Server client not available.');
+            return;
+        }
+        try {
+            // Get the scan results
+            const scanResult = await this.serverClient.getScanResults(scanId);
+            // Get comparison (will be with previous scan if available)
+            const comparison = await this.serverClient.compareScans(scanId);
+            // Update the current scan ID
+            this.currentScanId = scanId;
+            // Update the webview with the new scan
+            if (this.panel) {
+                this.panel.webview.html = this.getHtmlContent(comparison);
+            }
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`Failed to load scan: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
     }
     dispose() {
         if (this.panel) {

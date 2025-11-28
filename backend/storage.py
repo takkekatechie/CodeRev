@@ -137,6 +137,7 @@ class StorageManager:
                 scan = dict(row)
                 # Parse JSON fields
                 scan['languages'] = json.loads(scan['languages']) if scan['languages'] else []
+                scan['summary'] = json.loads(scan['summary']) if scan['summary'] else {}
                 
                 # Get issues
                 cursor.execute('SELECT * FROM scan_issues WHERE scan_id = ?', (scan_id,))
@@ -185,6 +186,13 @@ class StorageManager:
                 for row in rows:
                     scan = dict(row)
                     scan['languages'] = json.loads(scan['languages']) if scan['languages'] else []
+                    scan['summary'] = json.loads(scan['summary']) if scan['summary'] else {}
+                    
+                    # Map timestamp to scanDate for frontend
+                    if scan.get('timestamp'):
+                        from datetime import datetime
+                        scan['scanDate'] = datetime.fromtimestamp(scan['timestamp']).isoformat()
+                        
                     # Don't load issues for list view to keep it light
                     history.append(scan)
                 

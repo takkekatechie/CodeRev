@@ -85,6 +85,38 @@ def get_history():
         logger.error(f"Error getting history: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/scan/history', methods=['GET'])
+def get_scan_history():
+    try:
+        repo_path = request.args.get('repository_path')
+        limit = int(request.args.get('limit', 50))
+        
+        if not repo_path:
+            return jsonify({'error': 'repository_path parameter is required'}), 400
+        
+        history = scanner.storage.get_history(repo_path, limit)
+        return jsonify(history), 200
+    except Exception as e:
+        logger.error(f"Error getting scan history: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/scan/latest', methods=['GET'])
+def get_latest_scan():
+    try:
+        repo_path = request.args.get('repository_path')
+        
+        if not repo_path:
+            return jsonify({'error': 'repository_path parameter is required'}), 400
+        
+        history = scanner.storage.get_history(repo_path, 1)
+        if history and len(history) > 0:
+            return jsonify(history[0]), 200
+        else:
+            return jsonify({'error': 'No scans found for this repository'}), 404
+    except Exception as e:
+        logger.error(f"Error getting latest scan: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/scan/compare', methods=['POST'])
 def compare_scans():
     # Simplified - just return current scan for now
